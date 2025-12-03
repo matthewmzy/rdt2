@@ -26,3 +26,10 @@ hostfile*.txt
 .deepspeed_env
 .vscode
 
+/outputs
+/FastUMI-Data
+/rdt2_pika_shards
+/pika-videos
+/wandb
+/inference_outputs*
+/pika_raw_data

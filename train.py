@@ -52,23 +52,27 @@ def train(args):
                 bnb_4bit_quant_type="nf4",
                 bnb_4bit_compute_dtype=weight_dtype,
             )
+        # 处理 device_map: -1 表示自动，转换为 "auto"
+        device_map = args.local_rank if args.local_rank >= 0 else "auto"
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             args.pretrained_model_name_or_path,
             quantization_config=bnb_config if args.use_qlora else None,
             attn_implementation="flash_attention_2",
             torch_dtype=weight_dtype,
-            device_map=args.local_rank,
+            device_map=device_map,
         )
         model.add_adapter(lora_config)
         model.enable_adapters()
         model = prepare_model_for_kbit_training(model)
         model = get_peft_model(model, lora_config)
     else:
+        # 处理 device_map: -1 表示自动，转换为 "auto"
+        device_map = args.local_rank if args.local_rank >= 0 else "auto"
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             args.pretrained_model_name_or_path,
             torch_dtype=weight_dtype,
             attn_implementation="flash_attention_2",
-            device_map=args.local_rank,
+            device_map=device_map,
         )
 
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

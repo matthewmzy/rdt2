@@ -1,0 +1,8 @@
+# RDT2 dataset config for Pika fisheye camera data
+# NOTE: Always use the official normalizer.pt in project root!
+name: pika/bottle_task
+type: single
+shards_dir: /home/ubuntu/mzy/RDT2/rdt2_pika_shards
+kwargs:
+  instruction_path: /home/ubuntu/mzy/RDT2/rdt2_pika_shards/instruction.json
+  normalizer_path: /home/ubuntu/mzy/RDT2/normalizer.pt
