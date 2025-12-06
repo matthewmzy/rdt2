@@ -1,0 +1,6 @@
+sensor_msgs/Image umi_left_image
+sensor_msgs/Image umi_right_image
+
+---
+
+std_msgs/Float32MultiArray action_full
