@@ -27,7 +27,7 @@ set -e
 
 # 模型配置
 VLM_MODEL="robotics-diffusion-transformer/RDT2-VQ"
-FM_OUTPUT_DIR="./outputs/rdt2-fm-pika-bottle-fm"
+FM_OUTPUT_DIR="./outputs/rdt2-fm-pika-bread-fm"
 CONFIG_PATH="configs/rdt/post_train.yaml"
 
 # 数据配置

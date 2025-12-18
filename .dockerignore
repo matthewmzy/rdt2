@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+.eggs
+*.egg
+.mypy_cache
+.pytest_cache
+.coverage
+htmlcov
+
+# Virtual environments
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs and outputs
+logs/
+wandb/
+outputs/
+*.log
+
+# Data files (挂载而非复制)
+*.tar
+*.tar.gz
+*.zip
+*.zarr
+pika_raw_data/
+pika-videos/
+FastUMI-Data/
+rdt2_pika_shards/
+pika_1212_bread/
+pika_1212_pick_up_shoes/
+
+# Inference outputs
+inference_outputs/
+inference_outputs_fm/
+inference_outputs_fm_full/
+
+# Model checkpoints (挂载而非复制)
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker.sh
+.dockerignore

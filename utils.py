@@ -164,7 +164,6 @@ def batch_predict_action(
     # NOTE: +5 is a necessary hack to make sure the model can generate the action sequence
     # toggle do_sample=True for accelaration and determinstic sampling
     batch_generated_ids = model.generate(**inputs, max_new_tokens=(valid_action_id_length + 2))
-
     # fetch the generated_ids
     assert torch.all(inputs["input_ids"] == batch_generated_ids[:, :inputs["input_ids"].shape[1]]), \
         "The input_ids is not the same as the generated_ids"

@@ -1,0 +1,11 @@
+pip install clarabel
+pip install cvxopt
+pip install daqp
+pip install ecos
+pip install highspy
+pip install osqp
+pip install piqp
+pip install proxqp
+pip install qpalm
+pip install quadprog
+pip install scs

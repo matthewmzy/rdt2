@@ -69,6 +69,98 @@ os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 from models.rdt_inferencer import RDTInferencer
 
 
+# ==================== 坐标变换工具函数 ====================
+
+def rot6d_to_mat(d6: np.ndarray) -> np.ndarray:
+    """将 6D 旋转表示转换为旋转矩阵 (3, 3)"""
+    a1, a2 = d6[:3], d6[3:6]
+    b1 = a1 / (np.linalg.norm(a1) + 1e-12)
+    b2 = a2 - np.dot(b1, a2) * b1
+    b2 = b2 / (np.linalg.norm(b2) + 1e-12)
+    b3 = np.cross(b1, b2)
+    return np.stack([b1, b2, b3], axis=-1)  # (3, 3)
+
+
+def mat_to_rot6d(mat: np.ndarray) -> np.ndarray:
+    """将旋转矩阵转换为 6D 旋转表示"""
+    return np.concatenate([mat[:, 0], mat[:, 1]], axis=-1)
+
+
+def action10d_to_mat(action_10d: np.ndarray) -> np.ndarray:
+    """
+    将 10D 动作 [pos(3), rot6d(6), gripper(1)] 转换为 4x4 变换矩阵
+    注意：gripper 不参与变换计算
+    """
+    pos = action_10d[:3]
+    rot6d = action_10d[3:9]
+    rotmat = rot6d_to_mat(rot6d)
+    
+    mat = np.eye(4, dtype=action_10d.dtype)
+    mat[:3, :3] = rotmat
+    mat[:3, 3] = pos
+    return mat
+
+
+def mat_to_action10d(mat: np.ndarray, gripper: float) -> np.ndarray:
+    """将 4x4 变换矩阵转换回 10D 动作格式"""
+    pos = mat[:3, 3]
+    rotmat = mat[:3, :3]
+    rot6d = mat_to_rot6d(rotmat)
+    return np.concatenate([pos, rot6d, [gripper]], axis=-1)
+
+
+def convert_actions_to_frame_relative(actions: np.ndarray) -> np.ndarray:
+    """
+    将相对于当前帧的动作序列转换为相对于上一帧的动作序列
+    
+    输入定义 (模型输出):
+        action[t] = T_current^{-1} @ T_{current+t+1}
+        即 action[t] 表示第 (current + t + 1) 帧相对于 current 帧的变换
+    
+    输出定义 (帧间增量):
+        delta[t] = T_{current+t}^{-1} @ T_{current+t+1}
+        即 delta[t] 表示第 (current + t + 1) 帧相对于第 (current + t) 帧的变换
+    
+    转换公式:
+        delta[0] = action[0]  (第一帧没有上一帧，直接使用)
+        delta[t] = action[t-1]^{-1} @ action[t]  (t > 0)
+    
+    Args:
+        actions: (T, 20) 相对于当前帧的动作序列，格式 [right(10), left(10)]
+    
+    Returns:
+        deltas: (T, 20) 相对于上一帧的动作序列
+    """
+    T = actions.shape[0]
+    deltas = np.zeros_like(actions)
+    
+    # 第一帧直接复制（相对于当前帧 = 相对于上一帧）
+    deltas[0] = actions[0].copy()
+    
+    # 后续帧需要计算帧间变换
+    for t in range(1, T):
+        # 右臂
+        right_prev = actions[t-1, :10]
+        right_curr = actions[t, :10]
+        right_prev_mat = action10d_to_mat(right_prev)
+        right_curr_mat = action10d_to_mat(right_curr)
+        # delta = prev^{-1} @ curr
+        right_delta_mat = np.linalg.inv(right_prev_mat) @ right_curr_mat
+        right_delta = mat_to_action10d(right_delta_mat, right_curr[9])  # 使用当前帧的 gripper
+        
+        # 左臂
+        left_prev = actions[t-1, 10:20]
+        left_curr = actions[t, 10:20]
+        left_prev_mat = action10d_to_mat(left_prev)
+        left_curr_mat = action10d_to_mat(left_curr)
+        left_delta_mat = np.linalg.inv(left_prev_mat) @ left_curr_mat
+        left_delta = mat_to_action10d(left_delta_mat, left_curr[9])
+        
+        deltas[t] = np.concatenate([right_delta, left_delta])
+    
+    return deltas
+
+
 class RDT2InferenceNode(Node):
     """RDT2 ROS2 推理节点"""
     
@@ -323,6 +415,9 @@ class RDT2InferenceNode(Node):
             with torch.no_grad():
                 action_pred = self.inferencer.step(observations, self.instruction)
                 action_pred = action_pred.cpu().numpy()  # (24, 20)
+            
+            # 将相对于当前帧的动作转换为相对于上一帧的动作
+            action_pred = convert_actions_to_frame_relative(action_pred)
             
             # 更新动作队列
             with self.action_lock:

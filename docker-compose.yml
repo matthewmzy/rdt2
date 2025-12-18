@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  rdt2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rdt2:latest
+    container_name: rdt2
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYTHONUNBUFFERED=1
+      - HF_HOME=/workspace/models/huggingface
+      - TRANSFORMERS_CACHE=/workspace/models/huggingface
+      - WANDB_MODE=offline
+    volumes:
+      # 挂载项目代码（开发模式）
+      - .:/workspace/rdt2
+      # 挂载数据目录
+      - ./data:/workspace/data
+      # 挂载模型缓存（避免重复下载）
+      - ~/.cache/huggingface:/workspace/models/huggingface
+      # 挂载输出目录
+      - ./outputs:/workspace/outputs
+      # 挂载 wandb 日志
+      - ./wandb:/workspace/rdt2/wandb
+    working_dir: /workspace/rdt2
+    shm_size: '32gb'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # 训练服务
+  rdt2-train:
+    extends:
+      service: rdt2
+    container_name: rdt2-train
+    command: >
+      accelerate launch main.py
+      --deepspeed scripts/zero1.json
+      --pretrained_model_name_or_path robotics-diffusion-transformer/RDT2-VQ
+      --tokenizer_name Qwen/Qwen2.5-VL-7B-Instruct
+      --vae_name robotics-diffusion-transformer/RVQActionTokenizer
+      --dataset configs/datasets/example.yaml
+
+  # 推理服务
+  rdt2-inference:
+    extends:
+      service: rdt2
+    container_name: rdt2-inference
+    ports:
+      - "8000:8000"
+    command: /bin/bash

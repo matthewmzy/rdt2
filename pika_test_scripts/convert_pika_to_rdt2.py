@@ -439,7 +439,8 @@ def process_episode(
         ds_right = f['camera/color/pikaFisheyeCamera_r']  # 右手 = camera0
         
         n_frames = min(len(pose_l), len(pose_r), len(dist_l), len(dist_r), len(ds_left), len(ds_right))
-        
+        assert len(pose_l) == len(pose_r) == len(dist_l) == len(dist_r) == len(ds_left) == len(ds_right) == n_frames, "数据长度不一致"
+
         # 检查并转换角度单位
         if is_degree(pose_l[:, 3:]) or is_degree(pose_r[:, 3:]):
             pose_l[:, 3:] = np.radians(pose_l[:, 3:])

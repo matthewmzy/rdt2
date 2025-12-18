@@ -31,7 +31,7 @@ set -e
 # ===================== 配置区域 =====================
 
 # 任务名称
-TASK="pika-bottle-fm"
+TASK="pika-shoes-fm"
 
 # 模型配置
 CONFIG_PATH="configs/rdt/post_train.yaml"
@@ -41,7 +41,7 @@ PRETRAINED_FM="robotics-diffusion-transformer/RDT2-FM"
 # PRETRAINED_FM=""  # 留空则从头训练 RDTRunner
 
 # 数据配置
-DATASET_CONFIG="rdt2_pika_shards/dataset_config.yaml"
+DATASET_CONFIG="rdt2_pika_1212_pick_up_shoes/dataset_config.yaml"
 
 # 输出目录
 OUTPUT_DIR="./outputs/rdt2-fm-${TASK}"
@@ -50,7 +50,7 @@ LOGGING_DIR="./logs/rdt2-fm-${TASK}"
 # 训练超参数
 # 注意: FM 模式训练的是 RDTRunner (~4M 参数)，不是 7B VLM
 # 由于模型较小且全参数训练，需要比 VQ LoRA 模式更多的步数
-TRAIN_BATCH_SIZE=32       # Flow Matching 可以用更大的 batch size (模型小)
+TRAIN_BATCH_SIZE=48       # Flow Matching 可以用更大的 batch size (模型小)
 SAMPLE_BATCH_SIZE=16      # 用于采样验证
 GRADIENT_ACCUMULATION_STEPS=4  # 有效 batch = 32 * 4 = 128
 MAX_TRAIN_STEPS=10000     # 从预训练 FM 微调，10k 步应该够了
@@ -71,7 +71,7 @@ export LD_PRELOAD="$CONDA_PREFIX/lib/libjpeg.so.8"
 # 分布式训练环境变量
 export MASTER_ADDR=localhost
 export MASTER_PORT=29501
-export WORLD_SIZE=1
+export WORLD_SIZE=2
 export RANK=0
 export LOCAL_RANK=0
 

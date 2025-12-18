@@ -33,5 +33,7 @@ hostfile*.txt
 /wandb
 /inference_outputs*
 /pika_raw_data
+/rdt2_pika_1212_bread
+/rdt2_pika_1212_pick_up_shoes
 
 *.zip
